@@ -1,15 +1,19 @@
 //Perfect number client
 #define _POSIX_SOURCE
 
-#include <sys/socket.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <iostream>
+#include <math.h>
+#include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <strings.h>
-#include <iostream>
+#include <netdb.h>
+#include <string.h>
+#include <sstream>
 #include <pthread.h>
-#include <time.h>
 
 #define PORT = 26505
 
