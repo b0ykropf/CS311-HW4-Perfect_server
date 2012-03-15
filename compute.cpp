@@ -22,6 +22,10 @@
 
 using namespace std;
 
+unsigned char bitmap[536870912]; // bit map with max_value / 8 spaces
+unsigned char bitmask[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+int perfects_list[50];
+
 double performance(int ops){
     time_t start;
     time_t end;
@@ -75,13 +79,16 @@ cout << "I am here!\n";
 }
 
 int test_suite(int range_start, int range_end){
-    int perfect_list[50];
     int perfects_found = 0;
-    int current_test;
+    int current_test = 0;
+    int seek_byte = 0;
+    int seek_bit =0;
     for(int i = range_start; i <= range_end; i++){    
          current_test = perfect_test(i);
          if(current_test == 1){
-             perfect_list[perfects_found] = i;
+             seek_byte = i / 8;
+             seek_bit = i % 8;
+             bitmap[seek_byte] |= bitmask[seek_bit];
              perfects_found++;
          }
     }
@@ -89,9 +96,8 @@ int test_suite(int range_start, int range_end){
 }
 
 
-int ask_range(int sock_fd, int ops, int time_ops){
+int ask_range(int sock_fd, int ops, int time_ops, int *r_end){
     int r_start;
-    int r_end;
     char msg_snd[1024];
     sprintf(msg_snd, "REQWSPEC#%d#%d#", ops, time_ops);
     write(sock_fd, msg_snd, 1024);
@@ -107,17 +113,31 @@ int ask_range(int sock_fd, int ops, int time_ops){
     }
     if(msg_parts[0] == "FPN"){
         istringstream(msg_parts[1]) >> r_start;
-        istringstream(msg_parts[2]) >> r_end;
-        cout << "Start and End Recieved: " << r_start << " , " << r_end << endl;
+        istringstream(msg_parts[2]) >> *r_end;
+        cout << "Start and End Recieved: " << r_start << " , " << *r_end << endl;
+        return r_start;
     }
     else{
         cout << "Message Recieved did not contain ranges. \n";
     }
 }
 
+int return_perfects(int sock_fd, int num_p){
+    char msg_snd[1024];
+    int next_p;
+    sprintf(msg_snd, "RTNP#%d#", num_p);
+    for(int i = 0; i < num_p; i++){
+        next_p = perfects_list[i];
+        sprintf(msg_snd, "%d#",next_p);
+    }
+    write(sock_fd, msg_snd, 1024);
+}
+
 
 int main(int argc, char **argv){
     int ops = 1000000000;
+
+    int perfects_total =0;
     int perfects_found = 0;
     int range_start = 0;
     int range_end = 0;
@@ -143,7 +163,11 @@ int main(int argc, char **argv){
     connect(sock_fd, (struct sockaddr *) &servaddr, sizeof(servaddr));
     for(int i = 0; i < 10 ; i ++){
  
-        ask_range(sock_fd, ops, time_ops_int);   
+        range_start = ask_range(sock_fd, ops, time_ops_int, &range_end);
+        perfects_found = test_suite(range_start, range_end);
+        perfects_total += perfects_found;
+        cout << "Perfects found: " << perfects_found << endl;
+        return_perfects(sock_fd, perfects_found);   
     }
 /* THREAD STUFF ***************************************
 
