@@ -32,7 +32,7 @@ def manage():
 
 	while True:
 		sock_in, sock_out, sock_err = select.select(sockets , [] , [] )
-		for sockets in sock_in:
+		for client in sock_in:
 			if client is serv_sock:
 				client, client_addr = serv_sock.accept()
 				print 'got connection from ', client_addr
@@ -44,12 +44,13 @@ def manage():
 					
 					if msg[0] == 'REQWSPEC':
 						c_ops = int(msg[1])
-						op_time = float(msg[2])
+						op_time_int = int (msg[2])
+						op_time = float(op_time_int/100)
 						t_ops = c_ops * (15/op_time)
 						r_start = r_end + 1
-						r_end = calc_range(range_start,t_ops)
+						r_end = calc_range(r_start,t_ops)
 						client.send('FPN#'+str(r_start)+'#'+str(r_end))
-						print'Client sent '+str(r_start)+'to '+str(r_end)
+						print'Client sent '+str(r_start)+' to '+str(r_end)
 
 				else:
 					client.close()
