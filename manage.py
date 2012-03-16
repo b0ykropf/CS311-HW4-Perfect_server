@@ -1,7 +1,7 @@
 import socket
 import os
 import os.path
-import subprocess
+import sys
 import select
 
 
@@ -25,7 +25,6 @@ def manage():
 	r_start = 0
 	r_end = 0
 	new_perfects = 0
-	total_perfects = 0
 	p_to_add = 0
 	perfects_list = range(0,20)
 	list_crawl = 1
@@ -66,8 +65,15 @@ def manage():
 								p_to_add = int(msg[0])
 								perfects_list[list_crawl] = p_to_add
 								list_crawl += 1
+						perfects_list[list_crawl] = 'STP'
 						print 'Recieved '+str(new_perfects)+' numbers'
-
+						print str(perfects_list[1]) +' , '+str(perfects_list[2]) + ' , ' + str(perfects_list[3]) + ' , ' + str(perfects_list[4]) + ' , ' + str(perfects_list[5])
+					elif msg[0] == 'RPT':
+						client.send(repr(perfects_list))
+						print 'Sent list'
+					elif msg[0] == 'RPTNUM':
+						client.send(str(list_crawl) + '#')
+						print 'Sent List Length'
 				else:
 					client.close()
 					sockets.remove(client)

@@ -22,9 +22,8 @@
 
 using namespace std;
 
-unsigned char bitmap[536870912]; // bit map with max_value / 8 spaces
-unsigned char bitmask[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
 int perfects_list[50];
+int list_crawl = 0;
 
 double performance(int ops){
     time_t start;
@@ -86,10 +85,9 @@ int test_suite(int range_start, int range_end){
     for(int i = range_start; i <= range_end; i++){    
          current_test = perfect_test(i);
          if(current_test == 1){
-             seek_byte = i / 8;
-             seek_bit = i % 8;
-             bitmap[seek_byte] |= bitmask[seek_bit];
+             perfects_list[list_crawl] = i;
              perfects_found++;
+             list_crawl++;
          }
     }
     return perfects_found;
