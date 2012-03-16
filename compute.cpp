@@ -126,11 +126,12 @@ int return_perfects(int sock_fd, int num_p){
     char msg_snd[1024];
     int next_p;
     sprintf(msg_snd, "RTNP#%d#", num_p);
+    write(sock_fd, msg_snd, 1024);
     for(int i = 0; i < num_p; i++){
         next_p = perfects_list[i];
         sprintf(msg_snd, "%d#",next_p);
+        write(sock_fd, msg_snd, 1024);
     }
-    write(sock_fd, msg_snd, 1024);
 }
 
 

@@ -27,8 +27,8 @@ def manage():
 	new_perfects = 0
 	total_perfects = 0
 	p_to_add = 0
-	perfects_list = []
-	list_crawl = 0
+	perfects_list = range(0,20)
+	list_crawl = 1
 
 	serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	serv_sock.bind((HOST,PORT))
@@ -58,11 +58,15 @@ def manage():
 						print'Client sent '+str(r_start)+' to '+str(r_end)
 					elif msg[0] == 'RTNP':
 						new_perfects = int(msg[1])
+						print str(new_perfects)+' perfects inbound'
 						for i in range(2,2+new_perfects):
-							p_to_add = int(msg[i])
-							perfects_list[list_crawl] = p_to_add
-							list_crawl += 1
-						print 'Recieved '+str(new_perfects)+' numers'
+							data_in = client.recv(msg_size)
+							if data_in:
+								msg = data_in.split('#')
+								p_to_add = int(msg[0])
+								perfects_list[list_crawl] = p_to_add
+								list_crawl += 1
+						print 'Recieved '+str(new_perfects)+' numbers'
 
 				else:
 					client.close()
