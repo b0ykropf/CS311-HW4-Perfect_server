@@ -4,20 +4,15 @@ import os.path
 import sys
 import select
 
-
 def calc_range(start, t_ops):
-	MAX_VALUE = 4000000000
 	while (t_ops > 0):
 		t_ops -= start
 		start += 1
-	if (start > MAX_VALUE):
-		start = MAX_VALUE
 	return start
 
 
 def manage():
 	print 'server started\n'
-	MAX_VALUE = 4000000000
 	HOST = ''
 	PORT = 26505
         backlog = 5
@@ -50,7 +45,7 @@ def manage():
 						c_ops = int(msg[1])
 						op_time_int = int (msg[2])
 						op_time = float(op_time_int/100)
-						t_ops = c_ops * (5/op_time)
+						t_ops = c_ops * (4/op_time)
 						r_start = r_end + 1
 						r_end = calc_range(r_start,t_ops)
 						client.send('FPN#'+str(r_start)+'#'+str(r_end))
@@ -67,13 +62,19 @@ def manage():
 								list_crawl += 1
 						perfects_list[list_crawl] = 'STP'
 						print 'Recieved '+str(new_perfects)+' numbers'
-						print str(perfects_list[1]) +' , '+str(perfects_list[2]) + ' , ' + str(perfects_list[3]) + ' , ' + str(perfects_list[4]) + ' , ' + str(perfects_list[5])
 					elif msg[0] == 'RPT':
 						client.send(repr(perfects_list))
 						print 'Sent list'
 					elif msg[0] == 'RPTNUM':
 						client.send(str(list_crawl) + '#')
 						print 'Sent List Length'
+					elif msg[0] == 'DIEDIEDIE':
+						for client in sock_out:
+							client.send('DIE')
+							client.close()
+							serv_sock.close()
+						print 'CLOSING'
+						sys.exit()
 				else:
 					client.close()
 					sockets.remove(client)

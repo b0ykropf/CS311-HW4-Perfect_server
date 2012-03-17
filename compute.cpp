@@ -24,6 +24,7 @@ using namespace std;
 
 int perfects_list[50];
 int list_crawl = 0;
+const char* hostname;
 
 double performance(int ops){
     time_t start;
@@ -61,20 +62,29 @@ int perfect_test(int num){
     else{
         return 0;
     }
+
 }
-
-struct thread_data{ //struct for storing infortmation to pass to threads
-    int argument;
-};
-
-struct thread_data thread_data_array[1];// Temp data for threads
-
-
 void *sig_listen(void *args){ //Function for threads to call
+    cout << "Listener on duty!" << endl;
+    int sock_fd;
+    sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in servaddr;
+    servaddr.sin_family = AF_INET;
+    struct hostent *server;
+    server = gethostbyname(hostname);
+    bcopy((char *)server->h_addr,(char *) &servaddr.sin_addr.s_addr,
+    server->h_length);
+    servaddr.sin_port = htons(PORT);
+    memset(&(servaddr.sin_zero),'\0', 8);
+    connect(sock_fd, (struct sockaddr *) &servaddr, sizeof(servaddr));
 
-cout << "I am here!\n";
-
-    pthread_exit(NULL);
+    char msg_snd[1024];
+    sprintf(msg_snd, "RDY");
+    write(sock_fd,msg_snd,1024);
+    char msg_rcv[1024];
+    read(sock_fd, msg_rcv, 1024);
+    close(sock_fd);
+    exit(0);
 }
 
 int test_suite(int range_start, int range_end){
@@ -134,6 +144,12 @@ int return_perfects(int sock_fd, int num_p){
 
 
 int main(int argc, char **argv){
+    if(argc != 2){
+        cout << "Need argument for Hostname" << endl;
+    }
+
+    hostname = argv[1];
+
     int ops = 1000000000;
 
     int perfects_total =0;
@@ -141,8 +157,19 @@ int main(int argc, char **argv){
     int range_start = 0;
     int range_end = 0;
 
+// SETUP SOCKET ***************************************
     int sock_fd;
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in servaddr;
+    servaddr.sin_family = AF_INET;
+    struct hostent *server;
+    server = gethostbyname(hostname);
+    bcopy((char *)server->h_addr,(char *) &servaddr.sin_addr.s_addr,
+    server->h_length);
+    servaddr.sin_port = htons(PORT);
+    memset(&(servaddr.sin_zero),'\0', 8);
+    connect(sock_fd, (struct sockaddr *) &servaddr, sizeof(servaddr));
+//******************************************************
 
 /* Test Own Performance *******************************/
     cout << "Computing client started. Testing this system's performance. \n";
@@ -150,17 +177,18 @@ int main(int argc, char **argv){
     int time_ops_int = time_ops * 100;
     cout <<"Performance is " << ops << " operations in " << time_ops << "seconds.\n";
 /******************************************************/
-    struct sockaddr_in servaddr;
-    servaddr.sin_family = AF_INET;
-    struct hostent *server;
-    server = gethostbyname("127.0.0.1");
-    //server = gethostbyname("os-class.engr.oregonstate.edu");
-    bcopy((char *)server->h_addr,(char *) &servaddr.sin_addr.s_addr,
-    server->h_length);
-    servaddr.sin_port = htons(PORT);
-    memset(&(servaddr.sin_zero),'\0', 8);
-    connect(sock_fd, (struct sockaddr *) &servaddr, sizeof(servaddr));
-    for(int i = 0; i < 10 ; i ++){
+
+//THREAD STUFF ***************************************
+
+    int rc;
+    int t_arg = 0;
+    pthread_t sig_mon;
+
+    rc = pthread_create(&sig_mon,NULL, sig_listen,(void *)t_arg);   
+    cout<<"RC is " << rc << endl;
+//******************************************************
+
+    for(;;){
  
         range_start = ask_range(sock_fd, ops, time_ops_int, &range_end);
         perfects_found = test_suite(range_start, range_end);
@@ -168,15 +196,7 @@ int main(int argc, char **argv){
         cout << "Perfects found: " << perfects_found << endl;
         return_perfects(sock_fd, perfects_found);   
     }
-/* THREAD STUFF ***************************************
 
-    int rc;
-    pthread_t sig_mon[1];
-    thread_data_array[0].argument = 0;
-
-    rc = pthread_create(&sig_mon[0],NULL, sig_listen,(void *) &thread_data_array[0]);   
-cout<<"RC is " << rc << endl;
-******************************************************/
 
     return 0;
 }
